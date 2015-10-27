@@ -95,8 +95,8 @@ def tile(images):
     if not token:
         raise NoTokenError()
     request = { 'sources' : images }
-    print request
     r = requests.post(TILE_URI, json=request, params={ 'token': token })
+
     if r.ok:
         return Job(r.json()["id"])
     else:
@@ -119,13 +119,18 @@ def handle_info(args):
         print "\tImages:"
         for img in job.images():
             print "\t%s" % img
+        if job.status() == "COMPLETED":
+            print
+            print json.dumps(job.tile_json(),
+                             indent=4, separators=(',', ': '))
 
 def handle_tile(args):
     images = args.images
     if args.file:
-        images = open(images[0]).read().split('\n')
+        images = filter(lambda x: x, open(images[0]).read().split('\n'))
     try:
-        tile(images)
+        job = tile(images)
+        print "Started job with ID: %s" % (job.job_id)
     except NoTokenError:
         print "There is no OAM Server token set. Please set the %s environment variable to your token." % (OAM_SERVER_TOKEN_ENV)
         print "If you do not have a token, contact a HOT administrator to obtain one."
